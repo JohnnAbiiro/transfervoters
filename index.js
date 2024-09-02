@@ -49,6 +49,7 @@ async function processPDFDirectory(directoryPath) {
 
 connection.connect();
 
+/*
 async function processPDFFile(filePath) {
   try {
     console.log(`Processing file: ${filePath}`);
@@ -58,6 +59,7 @@ async function processPDFFile(filePath) {
     const region = await extractRegion(lines);
     const voterData = await extractVoterData(lines);
     const voterInfo = await allvoterinfo(pollingInfo, voterData);
+    console.log(voterInfo);
     // console.log("Polling Info:", pollingInfo);
    // console.log("Region:", region);
   // console.log("Voter Data:", voterInfo);
@@ -81,14 +83,8 @@ async function processPDFFile(filePath) {
           if (error) {
             console.log(error);
             reject(error);
-          } else {
-            console.log("Inserted ID:", results.insertId);
-            const insertquery = 'INSERT INTO errorlog SET ?';
-            const insertdata = { errormsg: error.message, path: filePath ,sqlerror:results.insertId};
-            connection.query(insertquery, insertdata, (err, resmsg) => {
-           if (err) console.error("Error inserting error log:", err);
-           else console.log("Error log inserted with ID:", resmsg.insertId);
-           });
+          } 
+          else {
             resolve();
           }
         });
@@ -108,7 +104,55 @@ async function processPDFFile(filePath) {
    });
     return false;
   }
+}*/
+async function processPDFFile(filePath) {
+  try {
+    console.log(`Processing file: ${filePath}`);
+    const doc = await getDocument(filePath).promise;
+    const lines = await processDoc(doc);
+    const pollingInfo = await PollingStationinfo(lines);
+    const region = await extractRegion(lines);
+    const voterData = await extractVoterData(lines);
+    const voterInfo = await allvoterinfo(pollingInfo, voterData);
+   // console.log(voterInfo);
+
+    for (const voter of voterInfo) { 
+      const { region, pscode, psname, constituency, voterid, name, reason, pstransfer, psnameto } = voter;
+
+      // Define the query with ON DUPLICATE KEY UPDATE
+      const insertQuery = `
+        INSERT INTO voterdata (region, pscode, psname, constituency, voterid, name, reason, pstransfer, psnameto) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          duplicate = 1;
+      `;
+      
+      await new Promise((resolve, reject) => {
+        connection.query(insertQuery, [region, pscode, psname, constituency, voterid, name, reason, pstransfer, psnameto], (error, results) => {
+          if (error) {
+            console.log(error?.stack || "Unknown error");
+            reject(error);
+          } else {
+            resolve();
+          }
+        });
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error occurred during extraction for file:", filePath);
+    console.log("Inserted ID:", error.insertId);
+    const insertquery = 'INSERT INTO errorlog SET ?';
+    const insertdata = { errormsg: error.message, path: filePath ,sqlerror:error.sql,sqlMessages:error.sqlMessage,sqlStates:error.sqlState};
+    connection.query(insertquery, insertdata, (err, resmsg) => {
+      if (err) console.error("Error inserting error log:", err);
+      else console.log("Error log inserted with ID:", resmsg.insertId);
+    });
+    return false;
+  }
 }
+
 
 async function processDoc(doc) {
   try {
