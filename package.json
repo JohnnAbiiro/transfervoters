@@ -1,0 +1,26 @@
+{
+  "name": "extract",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "author": "Kolog John",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@ironsoftware/ironpdf": "^2024.3.1",
+    "firebase": "^10.10.0",
+    "firebase-admin": "^12.0.0",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.9.5",
+    "node": "^18.20.2",
+    "node-cron": "^3.0.3",
+    "node-windows": "^1.0.0-beta.8",
+    "nodemon": "^3.1.0",
+    "pdfjs-dist": "^4.0.379",
+    "sharp": "^0.33.3"
+  }
+}
